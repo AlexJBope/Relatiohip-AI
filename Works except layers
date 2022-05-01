@@ -1,0 +1,98 @@
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, Dense, Flatten, MaxPool2D
+from tensorflow.keras.utils import plot_model
+from tensorflow.keras.models import load_model
+import pandas as pd
+import numpy as np
+from numpy import genfromtxt
+import csv
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+
+file = csv.reader(open('Data.csv'))  ## Reads in file
+Data = [line for line in file]
+
+DataY = []   ##Data when they are still together (yes)
+DataN = []   ##Data when they arent together (no)
+indexes = []  
+
+count = 0
+while count < len(Data):   ## Finds the indexes for the entires where they arent togther
+    if Data[count][1] == 'No':
+        indexes.append(count)
+    count += 1
+
+for i in indexes:           ## fills the data where they are no
+    DataN.append(Data[i])  
+
+indexes = []
+count = 0
+while count < len(Data):   ## Finds the indexes for the entires where they are togther
+    if Data[count][1] == 'Yes':
+        indexes.append(count)
+    count += 1
+
+for i in indexes:           ## fills the data where they are yes
+    DataY.append(Data[i])
+
+def clean(x):       ## removes the date/time, yes/no, months together
+    del x[0:3]
+    ##del x[4:6]
+
+
+LabelsN = [x[2] for x in DataN] ##stores the Labels for no
+LabelsY = [x[2] for x in DataY] ##stores the Labels for yes
+
+for x in DataN:
+    clean(x)
+
+for x in DataY:
+    clean(x)
+
+##Splits data into training and testing subsets
+X_train, X_test, y_train, y_test = train_test_split(DataN, LabelsN, random_state = 11, test_size = .1)
+
+df = pd.DataFrame(X_train)
+
+##normalize and make float instead of string
+count = 0
+while count < len(X_train):
+    X_train[count] = [float(x)/10 for x in X_train[count]]
+    count += 1
+##reshapes
+X_train = [np.reshape(x,(7,4,1)) for x in X_train]
+
+count = 0
+while count < len(X_test):
+    X_test[count] = [float(x)/10 for x in X_test[count]]
+    count += 1
+
+X_test = [np.reshape(x,(7,4,1)) for x in X_test]
+
+
+y_train = to_categorical(y_train)
+y_test = to_categorical(y_test)
+
+## Creates nuaral net layers
+cnn = Sequential()
+cnn.add(Conv2D(filters = 64, kernel_size = (2,2), activation = 'relu', input_shape = (7,4,1)))
+cnn.add(MaxPool2D(pool_size = (2,2)))
+##cnn.add(Conv2D(filters = 64, kernel_size = (2,2), activation = 'relu'))
+##cnn.add(MaxPool2D(pool_size = (2,2)))
+cnn.add(Flatten())
+cnn.add(Dense(units = 100, activation = 'relu'))
+cnn.add(Dense(units = 1, activation = 'softmax'))
+
+cnn.summary()
+
+plot_model(cnn, to_file='convnet.png', show_shapes=True, show_layer_names=True)
+
+cnn.compile(optimizer = 'adam', loss = 'categorical_crossentropy', metrics = ['accuracy'])
+cnn.fit(np.array(X_train),np.array(y_train), epochs=5)
+
+cnn.save('RelationshipsAI.h5')
+##cnn = load_model('mnist_cnn.h5')
+
+predictions = cnn.predict(X_test)
+df = pd.DataFrame(predictions)
