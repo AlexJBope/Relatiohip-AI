@@ -53,7 +53,7 @@ for x in DataY:
 ##Splits data into training and testing subsets
 X_train, X_test, y_train, y_test = train_test_split(DataN, LabelsN, random_state = 11, test_size = .1)
 
-df = pd.DataFrame(X_train)
+##df = pd.DataFrame(X_train)
 
 ##normalize and make float instead of string
 count = 0
@@ -68,11 +68,14 @@ while count < len(X_test):
     X_test[count] = [float(x)/10 for x in X_test[count]]
     count += 1
 
-X_test = [np.reshape(x,(7,4,1)) for x in X_test]
+X_test = [np.reshape(x,(1,7,4,1)) for x in X_test]
+
+y_train = [float(i) for i in y_train]
+y_test = [float(i) for i in y_test]
 
 
-y_train = to_categorical(y_train)
-y_test = to_categorical(y_test)
+##y_train = to_categorica (y_train)
+##y_test = to_categorical(y_test)
 
 ## Creates nuaral net layers
 cnn = Sequential()
@@ -94,5 +97,14 @@ cnn.fit(np.array(X_train),np.array(y_train), epochs=5)
 cnn.save('RelationshipsAI.h5')
 ##cnn = load_model('mnist_cnn.h5')
 
+
 predictions = cnn.predict(X_test)
 df = pd.DataFrame(predictions)
+
+
+As = [.7,.3,.9,.8,.1,.3,.4,.8,.2,.8,.2,.1,.9,.6,.7,.5,.6,.7,.2,.9,.6,.2,.7,.6,.9,.9,.9,.5]
+test = []
+test.append(As)
+test = [np.reshape(x,(1,7,4,1)) for x in test]
+testrun = cnn.predict(test)
+df2 = pd.DataFrame(testrun)
